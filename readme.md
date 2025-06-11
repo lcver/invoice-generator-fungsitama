@@ -16,7 +16,7 @@
 - atoms: state management folder
 - datasource/internal: digunakan untuk menyimpan data yang sifatnya dapat dipakai kembali, contoh: generate column, generate form field
 - datasource/external: digunakan untuk menyimpan data yang resourcenya dari external
--
+- templates: digunakan untuk menyimpan file export (contoh: template pdf, body email) 
 
 ### How to use
 
