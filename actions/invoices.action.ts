@@ -61,7 +61,10 @@ export const createInvoice = async ({
 };
 
 export async function getAllInvoices() {
-  let invs = await db.select().from(invoices);
+  let invs = await db
+    .select()
+    .from(invoices)
+    .orderBy(desc(invoices.invoice_number));
 
   const invoicesWithItems = await Promise.all(
     invs.map(async (inv) => {
@@ -142,9 +145,6 @@ export async function updateInvoice(
     };
   });
 
-  console.log(items);
-  console.log(itemRows);
-
   await db.insert(invoiceItems).values(itemRows);
 
   return { ...updatedInvoice, items: itemRows };
@@ -166,6 +166,7 @@ export async function searchInvoices(searchText: string) {
         ilike(invoices.invoice_number, `%${searchText}%`)
       )
     )
+    .orderBy(desc(invoices.invoice_number))
     .execute();
 
   const invoicesWithItems = await Promise.all(
@@ -182,6 +183,22 @@ export async function searchInvoices(searchText: string) {
   return invoicesWithItems;
 }
 
+export async function submitInvoice(
+  id: string,
+  { status }: { status: string }
+) {
+  const [updatedInvoice] = await db
+    .update(invoices)
+    .set({
+      status,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(invoices.id, id))
+    .returning();
+
+  return { ...updatedInvoice };
+}
+
 export async function generateInvoiceNumber() {
   const now = new Date();
 
@@ -195,7 +212,7 @@ export async function generateInvoiceNumber() {
   const lastInvoice = await db
     .select()
     .from(invoices)
-    .where(like(invoices.invoice_number, `${prefix}%`))
+    // .where(like(invoices.invoice_number, `${prefix}%`))
     .orderBy(desc(invoices.invoice_number))
     .limit(1);
 

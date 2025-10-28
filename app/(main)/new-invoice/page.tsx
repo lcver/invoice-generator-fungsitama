@@ -23,7 +23,7 @@ export default function CreatInvoice() {
   const handleSubmit = async (data: PayloadInvoiceInterface) => {
     try {
       setIsLoading(true);
-      const result = await createInvoice(data);
+      await createInvoice(data);
       toast({
         title: 'Success created invoice',
         description: `Invoice Number ${invoiceNumber}`,
@@ -67,15 +67,8 @@ export default function CreatInvoice() {
           <h1 className="text-2xl font-bold">Invoice</h1>
 
           <FormInvoice
+            invoiceNumber={invoiceNumber}
             editable={true}
-            invoice_number={invoiceNumber}
-            client_name=""
-            client_address=""
-            issue_date=""
-            due_date=""
-            total_amount={0}
-            status=""
-            items={[]}
             actionTitle="Generate Invoice"
             cb={(data) => handleSubmit(data)}
           />

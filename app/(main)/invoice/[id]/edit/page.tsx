@@ -5,13 +5,19 @@ import MainLayout from './layout';
 import { useEffect, useState } from 'react';
 import {
   InvoiceDetailInterface,
+  InvoiceInterface,
   PayloadInvoiceInterface,
 } from '@/entity/invoice';
 import { useParams, useRouter } from 'next/navigation';
-import { getInvoiceById, updateInvoice } from '@/actions/invoices.action';
+import {
+  getInvoiceById,
+  submitInvoice,
+  updateInvoice,
+} from '@/actions/invoices.action';
 import { FormInvoice } from '@/services/form-invoice';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 export default function InvoiceDetail() {
   const router = useRouter();
@@ -20,22 +26,23 @@ export default function InvoiceDetail() {
   const id = params.id;
 
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<PayloadInvoiceInterface>();
+  const [data, setData] = useState<InvoiceInterface>();
 
   useEffect(() => {
     if (!id) return;
 
     const fetchData = async () => {
       const fetchInvoice = await getInvoiceById(`${id}`);
-      if (!fetchInvoice) return;
+      const data: InvoiceDetailInterface = fetchInvoice ? fetchInvoice : {};
+      if (!data) return;
 
-      setData(fetchInvoice);
+      setData(data);
     };
 
     fetchData();
   }, [id]);
 
-  const handleSubmit = async (data: PayloadInvoiceInterface) => {
+  const handleSave = async (data: PayloadInvoiceInterface) => {
     setIsLoading(true);
     console.log(data.items);
 
@@ -68,6 +75,32 @@ export default function InvoiceDetail() {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!id || !data) return;
+    setIsLoading(true);
+
+    try {
+      await submitInvoice(`${id}`, {
+        status: 'submited',
+      });
+
+      toast({
+        title: 'Success submited invoice',
+        description: `Invoice Number ${data.invoice_number}`,
+      });
+      setIsLoading(false);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Fail to submit invoice',
+        description: `${error}`,
+      });
+      setIsLoading(false);
+    } finally {
+      router.push('/');
+    }
+  };
+
   return (
     <MainLayout>
       {isLoading && (
@@ -89,17 +122,19 @@ export default function InvoiceDetail() {
           {data && (
             <FormInvoice
               editable={true}
-              invoice_number={data.invoice_number}
-              client_name={data.client_name}
-              client_address={data.client_address}
-              issue_date={data.issue_date}
-              due_date={data.due_date}
-              total_amount={data.total_amount}
-              status={data.status}
-              items={data.items}
+              data={data}
               actionTitle="Simpan Invoice"
-              cb={(data) => handleSubmit(data)}
+              cb={(data) => handleSave(data)}
             />
+          )}
+          {data?.status && (
+            <div className="flex justify-end mt-10">
+              {data?.status == 'draft' && (
+                <Button size="lg" onClick={() => handleSubmit()}>
+                  Submit Invoice
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>

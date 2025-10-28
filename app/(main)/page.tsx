@@ -20,6 +20,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ButtonDownloadPDF } from '@/services/download-pdf';
+import clsx from 'clsx';
 
 export default function Home() {
   const router = useRouter();
@@ -130,7 +131,20 @@ export default function Home() {
                             <TableCell className="text-right">
                               {item.total_amount}
                             </TableCell>
-                            <TableCell>{item.status}</TableCell>
+                            <TableCell>
+                              <div>
+                                <span
+                                  className={clsx(
+                                    item.status == 'draft' && 'bg-slate-400',
+                                    item.status == 'submited' && 'bg-green-900',
+                                    item.status == 'cancelled' && 'bg-red-900',
+                                    'px-3 py-1 text-white rounded-full'
+                                  )}
+                                >
+                                  {item.status}
+                                </span>
+                              </div>
+                            </TableCell>
                             <TableCell className="flex gap-x-2">
                               <Button
                                 size="icon"
@@ -140,16 +154,20 @@ export default function Home() {
                               >
                                 <Eye />
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => {
-                                  router.push(`/invoice/${item.id}/edit`);
-                                }}
-                              >
-                                <Pencil />
-                              </Button>
-                              <ButtonDownloadPDF item={item} />
+                              {item.status == 'draft' && (
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => {
+                                    router.push(`/invoice/${item.id}/edit`);
+                                  }}
+                                >
+                                  <Pencil />
+                                </Button>
+                              )}
+                              {item.status == 'submited' && (
+                                <ButtonDownloadPDF item={item} />
+                              )}
                             </TableCell>
                           </TableRow>
                         );

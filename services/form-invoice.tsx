@@ -20,13 +20,16 @@ import {
 } from '@/entity/invoice';
 import { Button } from '@/components/ui/button';
 import clsx from 'clsx';
+import { DatePicker } from '@/components/ui/date-picker';
 
-interface FormInvoiceInteface extends InvoiceDetailInterface {
+interface FormInvoiceInteface {
   actionTitle: string;
+  invoiceNumber?: string;
   editable: boolean;
+  data?: InvoiceDetailInterface;
   cb?: (data: PayloadInvoiceInterface) => void;
 }
-export const FormInvoice = (data?: FormInvoiceInteface) => {
+export const FormInvoice = (props: FormInvoiceInteface) => {
   const [errors, setErrors] = useState({
     clientName: '',
     clientAddress: '',
@@ -58,11 +61,11 @@ export const FormInvoice = (data?: FormInvoiceInteface) => {
       newErrors.clientAddress = 'Alamat tidak boleh kosong';
     }
 
-    if (!issueDate || !issueDate.trim()) {
+    if (!issueDate) {
       newErrors.issueDate = 'Issu date tidak boleh kosong';
     }
 
-    if (!dueDate || !dueDate.trim()) {
+    if (!dueDate) {
       newErrors.dueDate = 'Due date tidak boleh kosong';
     }
 
@@ -85,18 +88,21 @@ export const FormInvoice = (data?: FormInvoiceInteface) => {
   }, [items]);
 
   useEffect(() => {
-    if (!data) return;
+    setIsEditable(props.editable);
+    setInvoiceNumber(
+      props.data ? props.data.invoice_number : props.invoiceNumber || ''
+    );
 
-    setIsEditable(data.editable);
-    setItems(data.items || []);
-    setInvoiceNumber(data.invoice_number);
-    setClientName(data.client_name);
-    setClientAddress(data.client_address);
-    setIssueDate(data.issue_date);
-    setDueDate(data.due_date);
-    setTotal(data.total_amount);
-    setStatus(data.status || status);
-  }, [data]);
+    if (!props.data) return;
+
+    setItems(props.data.items || []);
+    setClientName(props.data.client_name);
+    setClientAddress(props.data.client_address);
+    setIssueDate(props.data.issue_date);
+    setDueDate(props.data.due_date);
+    setTotal(props.data.total_amount);
+    setStatus(props.data.status || status);
+  }, [props]);
 
   return (
     <div className="flex flex-col gap-y-5 mt-10">
@@ -117,7 +123,7 @@ export const FormInvoice = (data?: FormInvoiceInteface) => {
             onClick={() => {
               if (!validateForm()) return;
 
-              data?.cb?.({
+              props?.cb?.({
                 client_address: clientAddress,
                 client_name: clientName,
                 invoice_number: invoiceNumber,
@@ -130,7 +136,7 @@ export const FormInvoice = (data?: FormInvoiceInteface) => {
             }}
             className="bg-slate-900 text-white px-4 py-2 rounded-lg"
           >
-            {data?.actionTitle}
+            {props?.actionTitle}
           </button>
         )}
       </div>
@@ -147,15 +153,20 @@ export const FormInvoice = (data?: FormInvoiceInteface) => {
               onChange={(e) => setInvoiceNumber(e.target.value)}
             />
           </div>
-          {/* <div>
+          <div>
             <Label htmlFor="invoice-date">Invoice date</Label>
             <Input
               id="invoice-date"
-              type="date"
-              value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)}
+              type="text"
+              readOnly={true}
+              className="bg-slate-200 text-black/60"
+              value={
+                props.data
+                  ? new Date(props.data?.createdAt).toLocaleDateString()
+                  : ''
+              }
             />
-          </div> */}
+          </div>
         </div>
         <div>
           <Label htmlFor="client-name">Client Name</Label>
@@ -185,34 +196,24 @@ export const FormInvoice = (data?: FormInvoiceInteface) => {
           />
         </div>
         <div className="flex gap-x-2">
-          <div>
-            <Label htmlFor="issue-date">Issue date</Label>
-            <Input
-              id="issue-date"
-              type="date"
-              readOnly={!isEditable}
-              className={clsx(
-                !isEditable && 'bg-slate-200 text-black/60',
-                errors.issueDate && 'border-red-600'
-              )}
-              value={issueDate}
-              onChange={(e) => setIssueDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="due-date">Due date</Label>
-            <Input
-              id="due-date"
-              type="date"
-              readOnly={!isEditable}
-              className={clsx(
-                !isEditable && 'bg-slate-200 text-black/60',
-                errors.dueDate && 'border-red-600'
-              )}
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
+          <DatePicker
+            label="Issue Date"
+            setDate={setIssueDate}
+            date={issueDate}
+            className={clsx(
+              !isEditable && 'bg-slate-200 text-black/60',
+              errors.issueDate && 'border-red-600'
+            )}
+          />
+          <DatePicker
+            label="Due Date"
+            setDate={setDueDate}
+            date={dueDate}
+            className={clsx(
+              !isEditable && 'bg-slate-200 text-black/60',
+              errors.dueDate && 'border-red-600'
+            )}
+          />
         </div>
         <div className="flex flex-col gap-y-2 mt-5">
           <div className="flex items-center justify-end gap-x-2">

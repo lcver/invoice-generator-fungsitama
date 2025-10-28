@@ -9,15 +9,19 @@ import {
 } from '@/entity/invoice';
 import { useParams, useRouter } from 'next/navigation';
 
-import { getInvoiceById, updateInvoice } from '@/actions/invoices.action';
+import { getInvoiceById, submitInvoice } from '@/actions/invoices.action';
 import { FormInvoice } from '@/services/form-invoice';
 import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InvoiceDetail() {
+  const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
   const id = params.id;
 
+  const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<InvoiceInterface>();
 
   useEffect(() => {
@@ -34,19 +38,30 @@ export default function InvoiceDetail() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = async (data: PayloadInvoiceInterface) => {
-    await updateInvoice(`${id}`, {
-      client_address: data.client_address,
-      client_name: data.client_name,
-      invoice_number: data.invoice_number,
-      due_date: data.due_date,
-      issue_date: data.issue_date,
-      total_amount: data.total_amount,
-      items: data.items,
-      status: data.status,
-    });
+  const handleSubmit = async () => {
+    if (!id || !data) return;
+    setIsLoading(true);
 
-    router.push('/');
+    try {
+      await submitInvoice(`${id}`, {
+        status: 'cancelled',
+      });
+
+      toast({
+        title: 'Cancelled invoice',
+        description: `Invoice Number ${data.invoice_number}`,
+      });
+      setIsLoading(false);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Fail to submit invoice',
+        description: `${error}`,
+      });
+      setIsLoading(false);
+    } finally {
+      router.push('/');
+    }
   };
 
   return (
@@ -65,17 +80,23 @@ export default function InvoiceDetail() {
           {data && (
             <FormInvoice
               editable={false}
-              invoice_number={data.invoice_number}
-              client_name={data.client_name}
-              client_address={data.client_address}
-              issue_date={data.issue_date}
-              due_date={data.due_date}
-              total_amount={data.total_amount}
-              status={data.status}
-              items={data.items}
+              data={data}
               actionTitle="Simpan Invoice"
-              cb={(data) => handleSubmit(data)}
+              // cb={(data) => handleSubmit(data)}
             />
+          )}
+          {data?.status && (
+            <div className="flex justify-end mt-10">
+              {data?.status == 'submited' && (
+                <Button
+                  size="lg"
+                  variant="destructive"
+                  onClick={() => handleSubmit()}
+                >
+                  Cancel Invoice
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
